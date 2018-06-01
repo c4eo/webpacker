@@ -40,7 +40,8 @@ const getPluginList = () => {
     'Manifest',
     new WebpackAssetsManifest({
       writeToDisk: true,
-      publicPath: true
+      publicPath: true,
+      merge: true
     })
   )
   return result
@@ -51,11 +52,11 @@ const getExtensionsGlob = () => {
   return extensions.length === 1 ? `**/*${extensions[0]}` : `**/*{${extensions.join(',')}}`
 }
 
-const getEntryObject = () => {
+const getEntryObject = (path) => {
   const result = new ConfigObject()
   const glob = getExtensionsGlob()
   const rootPath = join(config.source_path, config.source_entry_path)
-  const paths = sync(join(rootPath, glob))
+  const paths = path ? [path] : sync(join(rootPath, glob));
   paths.forEach((path) => {
     const namespace = relative(join(rootPath), dirname(path))
     const name = join(namespace, basename(path, extname(path)))
@@ -111,7 +112,12 @@ module.exports = class Base {
     this.resolvedModules = getModulePaths()
   }
 
-  toWebpackConfig() {
+  toWebpackConfig(path) {
+    this.loaders = getLoaderList()
+    this.plugins = getPluginList()
+    this.config = getBaseConfig()
+    this.entry = getEntryObject(path)
+    this.resolvedModules = getModulePaths()
     return this.config.merge({
       entry: this.entry.toObject(),
 
